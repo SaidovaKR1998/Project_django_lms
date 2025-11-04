@@ -22,6 +22,7 @@ def home_view(request):
     """
     return HttpResponse(html)
 
+
 urlpatterns = [
     path('', home_view, name='home'),  # Добавляем главную страницу
     path('admin/', admin.site.urls),
