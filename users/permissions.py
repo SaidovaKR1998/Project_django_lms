@@ -46,3 +46,14 @@ class IsNotModerator(BasePermission):
     """
     def has_permission(self, request, view):
         return not request.user.groups.filter(name='moderators').exists()
+
+class IsOwnerOrReadOnly(BasePermission):
+    """
+    Разрешает чтение всем, а запись только владельцам
+    """
+    def has_object_permission(self, request, view, obj):
+        # Чтение разрешено для любого запроса
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        # Запись разрешена только владельцу
+        return obj.owner == request.user
