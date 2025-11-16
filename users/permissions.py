@@ -22,6 +22,13 @@ class IsModerator(BasePermission):
     def has_object_permission(self, request, view, obj):
         return request.user.groups.filter(name='moderators').exists()
 
+class IsOwner(BasePermission):
+    """
+    Права доступа для владельцев объектов
+    """
+    def has_object_permission(self, request, view, obj):
+        return obj.owner == request.user
+
 class IsOwnerOrModerator(BasePermission):
     """
     Права доступа для владельцев или модераторов
