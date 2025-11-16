@@ -3,8 +3,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Course, Lesson
 from .serializers import CourseSerializer, LessonSerializer
-from .permissions import IsModerator, IsOwner, IsOwnerOrModerator, IsNotModerator
-
+from users.permissions import IsModerator, IsOwner, IsOwnerOrModerator, IsNotModerator
 
 class CourseViewSet(viewsets.ModelViewSet):
     queryset = Course.objects.all()
@@ -14,6 +13,13 @@ class CourseViewSet(viewsets.ModelViewSet):
     filterset_fields = ['owner']
 
     def get_permissions(self):
+        """
+        Настройка прав доступа для курсов:
+        - Создание: только не-модераторы
+        - Просмотр списка и деталей: авторизованные пользователи
+        - Обновление: владелец или модератор
+        - Удаление: только владелец
+        """
         if self.action == 'create':
             self.permission_classes = [IsAuthenticated, IsNotModerator]
         elif self.action in ['update', 'partial_update']:
@@ -26,7 +32,7 @@ class CourseViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.groups.filter(name='moderators').exists():
+        if user.groups.filter(name='moderators').exists() or user.is_staff:
             # Модераторы видят все курсы
             return Course.objects.all()
         else:
@@ -36,7 +42,6 @@ class CourseViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
-
 class LessonListCreateAPIView(generics.ListCreateAPIView):
     serializer_class = LessonSerializer
     permission_classes = [IsAuthenticated]
@@ -45,7 +50,7 @@ class LessonListCreateAPIView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        if user.groups.filter(name='moderators').exists():
+        if user.groups.filter(name='moderators').exists() or user.is_staff:
             return Lesson.objects.all()
         else:
             return Lesson.objects.filter(owner=user)
@@ -57,7 +62,6 @@ class LessonListCreateAPIView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
-
 
 class LessonRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Lesson.objects.all()
