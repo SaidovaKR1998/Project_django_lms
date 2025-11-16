@@ -5,7 +5,6 @@ from django.conf.urls.static import static
 from django.http import HttpResponse
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-
 def home_view(request):
     html = """
     <!DOCTYPE html>
@@ -54,6 +53,13 @@ def home_view(request):
                     <h3>🔐 Аутентификация</h3>
                     <p>JWT токены и регистрация</p>
                     <a href="/api/token/" class="btn btn-outline">Получить токен</a>
+                    <a href="/api/token/refresh/" class="btn btn-outline">Обновить токен</a>
+                </div>
+
+                <div class="endpoint-card">
+                    <h3>👥 Пользователи</h3>
+                    <p>Регистрация и управление профилями</p>
+                    <a href="/api/users/" class="btn btn-outline">API Пользователи</a>
                 </div>
 
                 <div class="endpoint-card">
@@ -61,22 +67,17 @@ def home_view(request):
                     <p>Работа с образовательными курсами</p>
                     <a href="/api/courses/" class="btn btn-outline">API Курсы</a>
                 </div>
-
-                <div class="endpoint-card">
-                    <h3>📖 Уроки API</h3>
-                    <p>Управление уроками и материалами</p>
-                    <a href="/api/lessons/" class="btn btn-outline">API Уроки</a>
-                </div>
             </div>
 
             <div class="api-info">
                 <h3>📡 Доступные API методы:</h3>
                 <p><span class="method post">POST</span> <code>/api/users/</code> - Регистрация (доступно без токена)</p>
-                <p><span class="method post">POST</span> <code>/api/token/</code> - Получить JWT токен</p>
+                <p><span class="method post">POST</span> <code>/api/token/</code> - Получить JWT токен (доступно без токена)</p>
                 <p><span class="method post">POST</span> <code>/api/token/refresh/</code> - Обновить токен</p>
                 <p><span class="method get">GET</span> <code>/api/courses/</code> - Список курсов (требуется токен)</p>
                 <p><span class="method post">POST</span> <code>/api/courses/</code> - Создать курс (только не-модераторы)</p>
-                <p><span class="method get">GET</span> <code>/api/users/profile/</code> - Мой профиль</p>
+                <p><span class="method get">GET</span> <code>/api/users/profile/</code> - Мой профиль (требуется токен)</p>
+                <p><span class="method get">GET</span> <code>/api/payments/</code> - История платежей (требуется токен)</p>
             </div>
 
             <div class="footer">
@@ -88,12 +89,11 @@ def home_view(request):
     """
     return HttpResponse(html)
 
-
 urlpatterns = [
-                  path('', home_view, name='home'),
-                  path('admin/', admin.site.urls),
-                  path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-                  path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-                  path('api/', include('lms.urls')),
-                  path('api/', include('users.urls')),
-              ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    path('', home_view, name='home'),
+    path('admin/', admin.site.urls),
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/', include('lms.urls')),
+    path('api/', include('users.urls')),
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
