@@ -1,7 +1,7 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
 from .models import CustomUser, Payment
@@ -12,7 +12,7 @@ from .permissions import IsProfileOwner
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = CustomUser.objects.all()
-    permission_classes = [IsAuthenticated]
+    serializer_class = UserPublicSerializer  # По умолчанию для списка
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -20,18 +20,28 @@ class UserViewSet(viewsets.ModelViewSet):
         elif self.action in ['update', 'partial_update']:
             return UserProfileSerializer
         elif self.action == 'retrieve':
-            if self.get_object() == self.request.user:
-                # Для своего профиля - с историей платежей
+            if self.get_object() == self.request.user or self.request.user.is_staff:
+                # Для своего профиля или для админа - с историей платежей
                 return UserProfileWithPaymentsSerializer
             else:
                 return UserPublicSerializer
         return UserPublicSerializer
 
     def get_permissions(self):
+        """
+        Настройка прав доступа:
+        - Регистрация доступна всем
+        - Просмотр списка и деталей - авторизованным
+        - Редактирование/удаление - только владельцу профиля или админу
+        """
         if self.action == 'create':
             self.permission_classes = [AllowAny]
-        elif self.action in ['update', 'partial_update', 'destroy']:
-            self.permission_classes = [IsAuthenticated, IsProfileOwner]
+        elif self.action == 'list':
+            self.permission_classes = [IsAuthenticated]
+        elif self.action in ['retrieve', 'update', 'partial_update', 'destroy']:
+            self.permission_classes = [IsAuthenticated, IsProfileOwner | IsAdminUser]
+        else:
+            self.permission_classes = [IsAuthenticated]
         return [permission() for permission in self.permission_classes]
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
@@ -64,11 +74,12 @@ class PaymentViewSet(viewsets.ModelViewSet):
     ]
     ordering_fields = ['payment_date', 'amount']
     ordering = ['-payment_date']  # Сортировка по умолчанию - новые сначала
+    permission_classes = [IsAuthenticated]  # Все операции с платежами требуют авторизации
 
     def get_queryset(self):
         """
         Пользователи видят только свои платежи
-        Модераторы видят все платежи
+        Модераторы и админы видят все платежи
         """
         user = self.request.user
 
