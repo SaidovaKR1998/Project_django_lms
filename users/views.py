@@ -5,34 +5,51 @@ from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter
 from .models import CustomUser, Payment
-from .serializers import UserRegisterSerializer, UserProfileSerializer, UserPublicSerializer, PaymentSerializer, \
-    UserProfileWithPaymentsSerializer
+from .serializers import (
+    UserRegisterSerializer, UserProfileSerializer, UserPublicSerializer,
+    PaymentSerializer, UserProfileWithPaymentsSerializer, UserPrivateSerializer
+)
 from .permissions import IsProfileOwner
 
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = CustomUser.objects.all()
-    serializer_class = UserPublicSerializer  # По умолчанию для списка
+    serializer_class = UserPublicSerializer  # По умолчанию для списка - публичная информация
+    permission_classes = [IsAuthenticated]  # По умолчанию требуем авторизацию
 
     def get_serializer_class(self):
+        """
+        Выбор сериализатора в зависимости от действия и прав:
+        - Регистрация: UserRegisterSerializer
+        - Список пользователей: UserPublicSerializer (только публичная информация)
+        - Просмотр своего профиля: UserProfileWithPaymentsSerializer (полная информация + платежи)
+        - Просмотр чужого профиля: UserPublicSerializer (только публичная информация)
+        - Редактирование: UserProfileSerializer
+        """
         if self.action == 'create':
             return UserRegisterSerializer
         elif self.action in ['update', 'partial_update']:
             return UserProfileSerializer
         elif self.action == 'retrieve':
-            if self.get_object() == self.request.user or self.request.user.is_staff:
-                # Для своего профиля или для админа - с историей платежей
+            # Проверяем, запрашивает ли пользователь свой профиль
+            if self.get_object() == self.request.user:
+                # Свой профиль - полная информация с платежами
                 return UserProfileWithPaymentsSerializer
             else:
+                # Чужой профиль - только публичная информация
                 return UserPublicSerializer
+        elif self.action == 'list':
+            # Список пользователей - только публичная информация
+            return UserPublicSerializer
         return UserPublicSerializer
 
     def get_permissions(self):
         """
         Настройка прав доступа:
-        - Регистрация доступна всем
-        - Просмотр списка и деталей - авторизованным
-        - Редактирование/удаление - только владельцу профиля или админу
+        - Регистрация: доступна всем (AllowAny)
+        - Просмотр списка: авторизованные пользователи
+        - Просмотр деталей: авторизованные пользователи
+        - Редактирование/удаление: только владелец профиля или админ
         """
         if self.action == 'create':
             self.permission_classes = [AllowAny]
@@ -46,7 +63,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def profile(self, request):
-        """Получить профиль текущего пользователя"""
+        """Получить профиль текущего пользователя (полная информация с платежами)"""
         serializer = UserProfileWithPaymentsSerializer(request.user)
         return Response(serializer.data)
 
@@ -73,19 +90,17 @@ class PaymentViewSet(viewsets.ModelViewSet):
         'payment_method'
     ]
     ordering_fields = ['payment_date', 'amount']
-    ordering = ['-payment_date']  # Сортировка по умолчанию - новые сначала
-    permission_classes = [IsAuthenticated]  # Все операции с платежами требуют авторизации
+    ordering = ['-payment_date']
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         """
-        Пользователи видят только свои платежи
+        Немодераторы видят только свои платежи
         Модераторы и админы видят все платежи
         """
         user = self.request.user
 
         if user.is_staff or user.groups.filter(name='moderators').exists():
-            # Модераторы и админы видят все платежи
             return Payment.objects.all()
         else:
-            # Обычные пользователи видят только свои платежи
             return Payment.objects.filter(user=user)
