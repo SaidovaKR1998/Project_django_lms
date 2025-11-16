@@ -30,12 +30,27 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 
 class UserPublicSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор для публичного просмотра профилей других пользователей
+    Доступна только общая информация (без пароля, фамилии, истории платежей)
+    """
+
     class Meta:
         model = CustomUser
-        fields = ('id', 'first_name')
+        fields = ('id', 'email', 'first_name')  # Только email и имя, без фамилии
 
 
-# СЕРИАЛИЗАТОР ДЛЯ PAYMENT
+class UserPrivateSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор для владельца профиля (полная информация)
+    """
+
+    class Meta:
+        model = CustomUser
+        fields = ('id', 'email', 'first_name', 'last_name')
+        read_only_fields = ('email',)
+
+
 class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
@@ -51,8 +66,11 @@ class PaymentSerializer(serializers.ModelSerializer):
         read_only_fields = ['user', 'payment_date']
 
 
-# СЕРИАЛИЗАТОР ДЛЯ ПРОФИЛЯ С ПЛАТЕЖАМИ
 class UserProfileWithPaymentsSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор для профиля владельца с историей платежей
+    Только для владельца профиля
+    """
     payments = PaymentSerializer(many=True, read_only=True)
 
     class Meta:
