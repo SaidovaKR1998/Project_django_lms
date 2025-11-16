@@ -3,7 +3,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Course, Lesson
 from .serializers import CourseSerializer, LessonSerializer
-from users.permissions import IsModerator, IsOwner, IsOwnerOrModerator, IsNotModerator, IsOwnerOrReadOnly
+from users.permissions import IsModerator, IsOwner, IsOwnerOrModerator, IsNotModerator
 
 
 class CourseViewSet(viewsets.ModelViewSet):
