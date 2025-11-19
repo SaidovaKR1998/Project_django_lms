@@ -201,7 +201,7 @@ class PaymentTestCase(APITestCase):
         """
         self.client.force_authenticate(user=self.user1)
 
-        response = self.client.get(reverse('payment-list'))
+        response = self.client.get(reverse('payment-list'))  # Исправлено на payment-list
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['results']), 1)  # Только свои платежи
@@ -213,7 +213,7 @@ class PaymentTestCase(APITestCase):
         """
         self.client.force_authenticate(user=self.user1)
 
-        response = self.client.get(reverse('payment-list') + f'?paid_course={self.course.id}')
+        response = self.client.get(reverse('payment-list') + f'?paid_course={self.course.id}')  # Исправлено
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['results']), 1)
@@ -225,6 +225,6 @@ class PaymentTestCase(APITestCase):
         """
         self.client.force_authenticate(user=self.user1)
 
-        response = self.client.get(reverse('payment-list') + '?ordering=payment_date')
+        response = self.client.get(reverse('payment-list') + '?ordering=payment_date')  # Исправлено
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
