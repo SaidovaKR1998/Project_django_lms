@@ -5,7 +5,6 @@ from .models import Course, Lesson
 from .serializers import CourseSerializer, LessonSerializer
 from users.permissions import IsModerator, IsOwner, IsOwnerOrModerator, IsNotModerator
 
-
 class CourseViewSet(viewsets.ModelViewSet):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
