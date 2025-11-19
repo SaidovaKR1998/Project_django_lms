@@ -4,6 +4,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from .models import Course, Lesson
 from .serializers import CourseSerializer, LessonSerializer
 from users.permissions import IsModerator, IsOwner, IsOwnerOrModerator, IsNotModerator
+from .paginators import LessonCoursePagination
 
 class CourseViewSet(viewsets.ModelViewSet):
     queryset = Course.objects.all()
@@ -11,6 +12,7 @@ class CourseViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['owner']
+    pagination_class = LessonCoursePagination
 
     def get_permissions(self):
         """
@@ -54,6 +56,7 @@ class LessonListCreateAPIView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['course', 'owner']
+    pagination_class = LessonCoursePagination
 
     def get_queryset(self):
         """
