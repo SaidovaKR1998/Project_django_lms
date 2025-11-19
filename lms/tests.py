@@ -191,7 +191,7 @@ class LessonTestCase(APITestCase):
             data
         )
 
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_lesson_delete_owner(self):
         """
