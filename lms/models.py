@@ -1,6 +1,6 @@
 from django.db import models
 from users.models import CustomUser
-
+from .validators import validate_youtube_url
 
 class Course(models.Model):
     title = models.CharField(max_length=200, verbose_name='Название')
@@ -20,7 +20,12 @@ class Lesson(models.Model):
     title = models.CharField(max_length=200, verbose_name='Название')
     description = models.TextField(blank=True, null=True, verbose_name='Описание')
     preview = models.ImageField(upload_to='lessons/previews/', blank=True, null=True, verbose_name='Превью')
-    video_link = models.URLField(blank=True, null=True, verbose_name='Ссылка на видео')
+    video_link = models.URLField(
+        blank=True,
+        null=True,
+        verbose_name='Ссылка на видео',
+        validators=[validate_youtube_url]  # Добавьте валидатор здесь
+    )
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='lessons', verbose_name='Курс')
     owner = models.ForeignKey(CustomUser, on_delete=models.CASCADE, null=True, blank=True, verbose_name='Владелец')
 
