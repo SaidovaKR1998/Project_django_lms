@@ -132,3 +132,8 @@ SWAGGER_SETTINGS = {
 REDOC_SETTINGS = {
     'LAZY_RENDERING': False,
 }
+
+# Stripe Settings
+STRIPE_PUBLISHABLE_KEY = 'pk_test_51SWJNTRraSkrK7NXwPkChsVSp4zG8Ta7E2os01svv7dsVC9DYjnYMGz11JRA7z8uEXYjWhnvsqCd8FW2KmzkAsW200QUQih3vQ'  # Замените на ваш ключ
+STRIPE_SECRET_KEY = 'sk_test_51SWJNTRraSkrK7NXVk9N430PE4FzBMqHyDBiSpm5h2XMqXGWtYntgEwG7E0l4G6ESOKq41lt56lo9i5czgjj7N3d007wWId8JW'  # Замените на ваш ключ
+STRIPE_WEBHOOK_SECRET = 'whsec_your_webhook_secret_here'  # Для вебхуков (опционально)
