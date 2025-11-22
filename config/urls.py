@@ -1,9 +1,43 @@
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
 from django.conf import settings
 from django.conf.urls.static import static
 from django.http import HttpResponse
+from rest_framework import permissions
+from drf_yasg.views import get_schema_view
+from drf_yasg import openapi
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+
+# Swagger/OpenAPI configuration
+schema_view = get_schema_view(
+    openapi.Info(
+        title="LMS Education Platform API",
+        default_version='v1',
+        description="""
+        API для образовательной платформы LMS (Learning Management System).
+
+        ## Основные возможности:
+        - 🔐 JWT аутентификация
+        - 👥 Управление пользователями и профилями
+        - 🎓 Создание и управление курсами и уроками
+        - 💳 Система платежей и подписок
+        - 📚 Подписки на обновления курсов
+
+        ## Авторизация:
+        Используйте JWT токен в заголовке Authorization: Bearer <your_token>
+
+        Получить токен можно через эндпоинты:
+        - POST /api/token/ - получение токена
+        - POST /api/token/refresh/ - обновление токена
+        """,
+        terms_of_service="https://www.google.com/policies/terms/",
+        contact=openapi.Contact(email="admin@lms-platform.com"),
+        license=openapi.License(name="BSD License"),
+    ),
+    public=True,
+    permission_classes=(permissions.AllowAny,),
+)
+
 
 def home_view(request):
     html = """
@@ -50,6 +84,13 @@ def home_view(request):
                 </div>
 
                 <div class="endpoint-card">
+                    <h3>📖 Документация API</h3>
+                    <p>Swagger и ReDoc документация</p>
+                    <a href="/swagger/" class="btn btn-outline">Swagger UI</a>
+                    <a href="/redoc/" class="btn btn-outline">ReDoc</a>
+                </div>
+
+                <div class="endpoint-card">
                     <h3>🔐 Аутентификация</h3>
                     <p>JWT токены и регистрация</p>
                     <a href="/api/token/" class="btn btn-outline">Получить токен</a>
@@ -60,12 +101,6 @@ def home_view(request):
                     <h3>👥 Пользователи</h3>
                     <p>Регистрация и управление профилями</p>
                     <a href="/api/users/" class="btn btn-outline">API Пользователи</a>
-                </div>
-
-                <div class="endpoint-card">
-                    <h3>🎓 Курсы API</h3>
-                    <p>Работа с образовательными курсами</p>
-                    <a href="/api/courses/" class="btn btn-outline">API Курсы</a>
                 </div>
             </div>
 
@@ -78,10 +113,11 @@ def home_view(request):
                 <p><span class="method post">POST</span> <code>/api/courses/</code> - Создать курс (только не-модераторы)</p>
                 <p><span class="method get">GET</span> <code>/api/users/profile/</code> - Мой профиль (требуется токен)</p>
                 <p><span class="method get">GET</span> <code>/api/payments/</code> - История платежей (требуется токен)</p>
+                <p><span class="method post">POST</span> <code>/api/subscriptions/</code> - Управление подписками (требуется токен)</p>
             </div>
 
             <div class="footer">
-                <p>LMS System v2.0 | Django + DRF + JWT | 2024</p>
+                <p>LMS System v3.0 | Django + DRF + JWT + Stripe | 2024</p>
             </div>
         </div>
     </body>
@@ -89,11 +125,20 @@ def home_view(request):
     """
     return HttpResponse(html)
 
+
 urlpatterns = [
-    path('', home_view, name='home'),
-    path('admin/', admin.site.urls),
-    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('api/', include('lms.urls')),
-    path('api/', include('users.urls')),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+                  path('', home_view, name='home'),
+                  path('admin/', admin.site.urls),
+
+                  # Документация
+                  re_path(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0),
+                          name='schema-json'),
+                  path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
+                  path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
+
+                  # API
+                  path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+                  path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+                  path('api/', include('lms.urls')),
+                  path('api/', include('users.urls')),
+              ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
