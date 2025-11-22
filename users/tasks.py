@@ -2,6 +2,8 @@ from celery import shared_task
 from django.utils import timezone
 from datetime import timedelta
 from django.contrib.auth import get_user_model
+from django.core.mail import send_mail
+from django.conf import settings
 
 User = get_user_model()
 
@@ -23,12 +25,15 @@ def check_inactive_users():
 
         count_before = inactive_users.count()
 
-        # Блокируем пользователей
+        # Блокируем пользователей и отправляем уведомления
         for user in inactive_users:
             user.is_active = False
             user.save(update_fields=['is_active'])
 
-        return f"Blocked {count_before} inactive users"
+            # Асинхронная отправка уведомления о блокировке
+            send_user_blocked_notification.delay(user.id)
+
+        return f"Blocked {count_before} inactive users and sent notifications"
 
     except Exception as e:
         return f"Error checking inactive users: {str(e)}"
