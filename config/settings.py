@@ -1,4 +1,5 @@
 import os
+from celery.schedules import crontab
 from pathlib import Path
 from datetime import timedelta
 
@@ -9,6 +10,9 @@ SECRET_KEY = 'django-insecure-your-secret-key-here'
 DEBUG = True
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0']
+
+# Загрузка переменных окружения
+REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -22,6 +26,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     'drf_yasg',
+    'django_celery_beat',
 
     # Local apps
     'users',
@@ -137,3 +142,32 @@ REDOC_SETTINGS = {
 STRIPE_PUBLISHABLE_KEY = 'pk_test_51SWJNTRraSkrK7NXwPkChsVSp4zG8Ta7E2os01svv7dsVC9DYjnYMGz11JRA7z8uEXYjWhnvsqCd8FW2KmzkAsW200QUQih3vQ'  # Замените на ваш ключ
 STRIPE_SECRET_KEY = 'sk_test_51SWJNTRraSkrK7NXVk9N430PE4FzBMqHyDBiSpm5h2XMqXGWtYntgEwG7E0l4G6ESOKq41lt56lo9i5czgjj7N3d007wWId8JW'  # Замените на ваш ключ
 STRIPE_WEBHOOK_SECRET = 'whsec_your_webhook_secret_here'  # Для вебхуков (опционально)
+
+# Celery Configuration
+CELERY_BROKER_URL = REDIS_URL
+CELERY_RESULT_BACKEND = REDIS_URL
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Europe/Moscow'  # Убедитесь что совпадает с TIME_ZONE
+CELERY_ENABLE_UTC = False
+
+# Celery Beat Configuration
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+# Email Configuration (для рассылки писем)
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'localhost')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = 'noreply@lms-platform.com'
+
+# Celery Beat Schedule
+CELERY_BEAT_SCHEDULE = {
+    'check-inactive-users': {
+        'task': 'users.tasks.check_inactive_users',
+        'schedule': crontab(hour=0, minute=0),  # Ежедневно в полночь
+    },
+}
