@@ -52,9 +52,6 @@ class UserPrivateSerializer(serializers.ModelSerializer):
 
 
 class PaymentSerializer(serializers.ModelSerializer):
-    stripe_payment_url = serializers.URLField(read_only=True)
-    payment_status = serializers.CharField(read_only=True)
-
     class Meta:
         model = Payment
         fields = [
@@ -64,9 +61,9 @@ class PaymentSerializer(serializers.ModelSerializer):
             'paid_course',
             'paid_lesson',
             'amount',
-            'payment_method'
-            'stripe_payment_url',
-            'payment_status',
+            'payment_method',
+            'stripe_payment_url',  # Добавлено для Stripe
+            'payment_status',  # Добавлено для Stripe
         ]
         read_only_fields = ['user', 'payment_date', 'stripe_payment_url', 'payment_status']
 
