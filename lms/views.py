@@ -5,6 +5,7 @@ from .models import Course, Lesson
 from .serializers import CourseSerializer, LessonSerializer
 from users.permissions import IsModerator, IsOwner, IsOwnerOrModerator, IsNotModerator
 from .paginators import LessonCoursePagination
+from .tasks import send_course_update_notification
 
 class CourseViewSet(viewsets.ModelViewSet):
     queryset = Course.objects.all()
@@ -49,6 +50,17 @@ class CourseViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         """Автоматически привязываем курс к текущему пользователю"""
         serializer.save(owner=self.request.user)
+
+    def perform_update(self, serializer):
+        """
+        Сохранение обновленного курса и отправка уведомлений подписчикам
+        """
+        instance = serializer.save()
+
+        # Асинхронная отправка уведомлений подписчикам
+        send_course_update_notification.delay(instance.id)
+
+        return instance
 
 
 class LessonListCreateAPIView(generics.ListCreateAPIView):
